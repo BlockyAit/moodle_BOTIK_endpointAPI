@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const session = require('express-session');
 const bodyParser = require('body-parser');
 const path = require('path');
+const axios = require('axios'); // Import axios
 require('dotenv').config();
 
 const app = express();
@@ -37,6 +38,15 @@ const QA = mongoose.model('QA', new mongoose.Schema({
     },
   ],
   date: String,
+}));
+
+// Define Deadline Schema (Added)
+const Deadline = mongoose.model('Deadline', new mongoose.Schema({
+  userId: mongoose.Schema.Types.ObjectId,
+  courseId: Number,
+  courseName: String,
+  assignment: String,
+  dueDate: Date,
 }));
 
 // Middleware
@@ -88,8 +98,10 @@ app.get('/logout', (req, res) => {
 // Home Route
 app.get('/home', (req, res) => {
   if (!req.session.user) return res.redirect('/login');
-  res.render('home');
+
+  res.render('home', { user: req.session.user }); // ✅ Pass user to EJS
 });
+
 
 // Q&A Route - Display All Q&A
 app.get('/qa', async (req, res) => {
@@ -132,6 +144,48 @@ app.post('/qa/add-answer/:id', async (req, res) => {
   });
 
   res.redirect('/qa');
+});
+
+// Moodle Deadlines Sync Route (Fixed)
+app.get('/deadlines', async (req, res) => {
+  if (!req.session.user) return res.redirect('/login');
+
+  try {
+    const moodleResponse = await axios.get(
+      'https://moodle.astanait.edu.kz/webservice/rest/server.php',
+      {
+        params: {
+          wstoken: req.session.user.moodleToken,
+          wsfunction: 'mod_assign_get_assignments',
+          moodlewsrestformat: 'json'
+        }
+      }
+    );
+
+    const courses = moodleResponse.data.courses || [];
+    const userId = req.session.user._id;
+
+    for (const course of courses) {
+      for (const assignment of course.assignments || []) {
+        const existingDeadline = await Deadline.findOne({ userId, courseId: course.id, assignment: assignment.name });
+
+        if (!existingDeadline) {
+          await Deadline.create({
+            userId,
+            courseId: course.id,
+            courseName: course.fullname,
+            assignment: assignment.name,
+            dueDate: new Date(assignment.duedate * 1000) // Convert from UNIX timestamp
+          });
+        }
+      }
+    }
+
+    res.redirect('/home');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error syncing deadlines.");
+  }
 });
 
 // Start Server

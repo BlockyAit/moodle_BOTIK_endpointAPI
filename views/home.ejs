@@ -1,12 +1,19 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
 </head>
 <body>
-    <h2>Welcome</h2>
-    <a href="/qa"><button>Q&A</button></a>
-    <a href="/grades"><button>Grades</button></a>
-    <a href="/deadlines"><button>Deadlines & Assignments</button></a>
+    <h2>Welcome, <%= user.username %>!</h2>
+    
+    <nav>
+        <ul>
+            <li><a href="/qa">Q&A</a></li>
+            <li><a href="/deadlines">Deadlines</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </nav>
 </body>
 </html>

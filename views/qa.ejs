@@ -6,40 +6,38 @@
     <title>Q&A</title>
 </head>
 <body>
-    <h1>Q&A Section</h1>
+    <h2>Q&A Section</h2>
 
-    <!-- Add New Question Form -->
+    <nav>
+        <ul>
+            <li><a href="/home">Home</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </nav>
+
+    <h3>Ask a New Question:</h3>
     <form action="/qa/add-question" method="POST">
-        <input type="text" name="question" placeholder="Ask a question" required>
-        <button type="submit">Post Question</button>
+        <textarea name="question" required></textarea>
+        <button type="submit">Submit</button>
     </form>
 
-    <hr>
-
-    <!-- Display Q&A -->
+    <h3>Existing Questions:</h3>
     <ul>
         <% qaList.forEach(qa => { %>
             <li>
-                <strong>Question:</strong> <%= qa.question %> <br>
-                <strong>Posted on:</strong> <%= qa.date %>
-
-                <!-- Display Answers -->
+                <strong><%= qa.question %></strong> (Asked on <%= qa.date %>)
                 <ul>
                     <% qa.answers.forEach(answer => { %>
-                        <li><%= answer.answer %> (Posted on: <%= answer.date %>)</li>
-                    <% }); %>
+                        <li><%= answer.answer %> (Answered on <%= answer.date %>)</li>
+                    <% }) %>
                 </ul>
-
-                <!-- Add Answer Form -->
+                
                 <form action="/qa/add-answer/<%= qa._id %>" method="POST">
-                    <input type="text" name="answer" placeholder="Write an answer" required>
+                    <input type="text" name="answer" placeholder="Your Answer" required>
                     <button type="submit">Submit Answer</button>
                 </form>
             </li>
-            <hr>
-        <% }); %>
+        <% }) %>
     </ul>
-
-    <a href="/home">Back to Home</a>
 </body>
 </html>
