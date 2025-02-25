@@ -91,11 +91,47 @@ app.get('/home', (req, res) => {
   res.render('home');
 });
 
-// Q&A Route
+// Q&A Route - Display All Q&A
 app.get('/qa', async (req, res) => {
   if (!req.session.user) return res.redirect('/login');
   const qaList = await QA.find();
   res.render('qa', { qaList });
+});
+
+// Q&A Route - Add New Question
+app.post('/qa/add-question', async (req, res) => {
+  if (!req.session.user) return res.redirect('/login');
+  
+  const { question } = req.body;
+  const newQuestion = new QA({
+    userId: req.session.user._id,
+    question,
+    answers: [],
+    date: new Date().toISOString().split('T')[0]
+  });
+
+  await newQuestion.save();
+  res.redirect('/qa');
+});
+
+// Q&A Route - Add Answer to Existing Question
+app.post('/qa/add-answer/:id', async (req, res) => {
+  if (!req.session.user) return res.redirect('/login');
+
+  const { id } = req.params;
+  const { answer } = req.body;
+
+  await QA.findByIdAndUpdate(id, {
+    $push: {
+      answers: {
+        userId: req.session.user._id,
+        answer,
+        date: new Date().toISOString().split('T')[0],
+      }
+    }
+  });
+
+  res.redirect('/qa');
 });
 
 // Start Server
