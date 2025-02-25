@@ -102,12 +102,11 @@ app.get('/home', (req, res) => {
   res.render('home', { user: req.session.user }); // ✅ Pass user to EJS
 });
 
-
 // Q&A Route - Display All Q&A
 app.get('/qa', async (req, res) => {
   if (!req.session.user) return res.redirect('/login');
   const qaList = await QA.find();
-  res.render('qa', { qaList });
+  res.render('qa', { qaList, user: req.session.user });
 });
 
 // Q&A Route - Add New Question
@@ -151,6 +150,10 @@ app.get('/deadlines', async (req, res) => {
   if (!req.session.user) return res.redirect('/login');
 
   try {
+    if (!req.session.user.moodleToken) {
+      return res.status(401).send("Unauthorized: Moodle token missing.");
+    }
+
     const moodleResponse = await axios.get(
       'https://moodle.astanait.edu.kz/webservice/rest/server.php',
       {
@@ -183,7 +186,7 @@ app.get('/deadlines', async (req, res) => {
 
     res.redirect('/home');
   } catch (error) {
-    console.error(error);
+    console.error("Moodle API Error:", error.response?.data || error.message);
     res.status(500).send("Error syncing deadlines.");
   }
 });
