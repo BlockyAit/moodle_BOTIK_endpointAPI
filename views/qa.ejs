@@ -1,20 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Q&A</title>
 </head>
 <body>
-    <h2>Q&A</h2>
-    <% qaList.forEach(qa => { %>
-        <div>
-            <h4><%= qa.question %></h4>
-            <p>Asked on: <%= qa.date %></p>
-            <ul>
-                <% qa.answers.forEach(answer => { %>
-                    <li><%= answer.answer %> (Answered on: <%= answer.date %>)</li>
-                <% }) %>
-            </ul>
-        </div>
-    <% }) %>
+    <h1>Q&A Section</h1>
+
+    <!-- Add New Question Form -->
+    <form action="/qa/add-question" method="POST">
+        <input type="text" name="question" placeholder="Ask a question" required>
+        <button type="submit">Post Question</button>
+    </form>
+
+    <hr>
+
+    <!-- Display Q&A -->
+    <ul>
+        <% qaList.forEach(qa => { %>
+            <li>
+                <strong>Question:</strong> <%= qa.question %> <br>
+                <strong>Posted on:</strong> <%= qa.date %>
+
+                <!-- Display Answers -->
+                <ul>
+                    <% qa.answers.forEach(answer => { %>
+                        <li><%= answer.answer %> (Posted on: <%= answer.date %>)</li>
+                    <% }); %>
+                </ul>
+
+                <!-- Add Answer Form -->
+                <form action="/qa/add-answer/<%= qa._id %>" method="POST">
+                    <input type="text" name="answer" placeholder="Write an answer" required>
+                    <button type="submit">Submit Answer</button>
+                </form>
+            </li>
+            <hr>
+        <% }); %>
+    </ul>
+
+    <a href="/home">Back to Home</a>
 </body>
 </html>
