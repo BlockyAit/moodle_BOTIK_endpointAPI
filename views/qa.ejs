@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Q&A</title>
+</head>
+<body>
+    <h2>Q&A</h2>
+    <% qaList.forEach(qa => { %>
+        <div>
+            <h4><%= qa.question %></h4>
+            <p>Asked on: <%= qa.date %></p>
+            <ul>
+                <% qa.answers.forEach(answer => { %>
+                    <li><%= answer.answer %> (Answered on: <%= answer.date %>)</li>
+                <% }) %>
+            </ul>
+        </div>
+    <% }) %>
+</body>
+</html>
