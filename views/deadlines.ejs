@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deadlines</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <h2>Your Deadlines</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Course</th>
+                <th>Assignment</th>
+                <th>Due Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (deadlines.length > 0) { %>
+                <% deadlines.forEach(deadline => { %>
+                    <tr>
+                        <td><%= deadline.courseName %></td>
+                        <td><%= deadline.assignment %></td>
+                        <td><%= new Date(deadline.dueDate).toLocaleString() %></td>
+                    </tr>
+                <% }) %>
+            <% } else { %>
+                <tr>
+                    <td colspan="3">No deadlines found.</td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+    <a href="/home">Back to Home</a>
+</body>
+</html>

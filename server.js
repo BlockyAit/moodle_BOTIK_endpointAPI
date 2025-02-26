@@ -99,7 +99,7 @@ app.get('/logout', (req, res) => {
 app.get('/home', (req, res) => {
   if (!req.session.user) return res.redirect('/login');
 
-  res.render('home', { user: req.session.user }); // ✅ Pass user to EJS
+  res.render('home', { user: req.session.user });
 });
 
 // Q&A Route - Display All Q&A
@@ -125,7 +125,7 @@ app.post('/qa/add-question', async (req, res) => {
   res.redirect('/qa');
 });
 
-// Q&A Route - Add Answer to Existing Question
+// Q&A Route
 app.post('/qa/add-answer/:id', async (req, res) => {
   if (!req.session.user) return res.redirect('/login');
 
@@ -145,7 +145,7 @@ app.post('/qa/add-answer/:id', async (req, res) => {
   res.redirect('/qa');
 });
 
-// Moodle Deadlines Sync Route (Fixed)
+// Moodle Deadlines Sync Route
 app.get('/deadlines', async (req, res) => {
   if (!req.session.user) return res.redirect('/login');
 
@@ -164,6 +164,7 @@ app.get('/deadlines', async (req, res) => {
         }
       }
     );
+    console.log(moodleResponse)
 
     const courses = moodleResponse.data.courses || [];
     const userId = req.session.user._id;
@@ -178,18 +179,133 @@ app.get('/deadlines', async (req, res) => {
             courseId: course.id,
             courseName: course.fullname,
             assignment: assignment.name,
-            dueDate: new Date(assignment.duedate * 1000) // Convert from UNIX timestamp
+            dueDate: new Date(assignment.duedate * 1000),
           });
+          console.log("Here")
         }
       }
     }
 
-    res.redirect('/home');
+    res.redirect('/deadlines/view');
   } catch (error) {
     console.error("Moodle API Error:", error.response?.data || error.message);
     res.status(500).send("Error syncing deadlines.");
   }
 });
 
-// Start Server
+// To render the frontend page
+app.get('/deadlines/view', async (req, res) => {
+  if (!req.session.user) return res.redirect('/login');
+
+  try {
+    const now = new Date(); 
+    const deadlines = await Deadline.find({ 
+      userId: req.session.user._id, 
+      dueDate: { $gte: now } 
+    }).sort({ dueDate: 1 });
+
+    res.render('deadlines', { deadlines });
+  } catch (error) {
+    console.error("Error fetching deadlines:", error.message);
+    res.status(500).send("Error loading deadlines.");
+  }
+});
+
+// To get active courses
+app.get('/active-courses', async (req, res) => {
+  if (!req.session.user) return res.redirect('/login');
+
+  try {
+    if (!req.session.user.moodleToken) {
+      return res.status(401).send("Unauthorized: Moodle token missing.");
+    }
+    const ii = await axios.get(
+      'https://moodle.astanait.edu.kz/webservice/rest/server.php',
+      {
+        params: {
+          wstoken: req.session.user.moodleToken,
+          wsfunction: 'core_webservice_get_site_info',
+          moodlewsrestformat: 'json'
+        }
+      }
+    );
+
+    const uid = ii.data.userid;
+    const moodleResponse = await axios.get(
+      'https://moodle.astanait.edu.kz/webservice/rest/server.php',
+      {
+        params: {
+          wstoken: req.session.user.moodleToken,
+          wsfunction: 'core_enrol_get_users_courses',
+          moodlewsrestformat: 'json',
+          userid: uid
+        }
+      }
+    );
+
+    const now = Math.floor(Date.now() / 1000); 
+    const activeCourses = moodleResponse.data
+      .filter(course => course.enddate >= now) 
+      .map(course => ({
+        id: course.id,
+        fullname: course.fullname
+      }));
+
+    res.render('courses', { courses: activeCourses });
+  } catch (error) {
+    console.error("Error fetching courses:", error.response?.data || error.message);
+    res.status(500).send("Error fetching active courses.");
+  }
+});
+
+// To see course specific grades
+app.get('/grades/:courseId', async (req, res) => {
+  if (!req.session.user) return res.redirect('/login');
+
+  try {
+      if (!req.session.user.moodleToken) {
+          return res.status(401).send("Unauthorized: Moodle token missing.");
+      }
+
+      const courseId = req.params.courseId;
+
+      const ii = await axios.get(
+        'https://moodle.astanait.edu.kz/webservice/rest/server.php',
+        {
+          params: {
+            wstoken: req.session.user.moodleToken,
+            wsfunction: 'core_webservice_get_site_info',
+            moodlewsrestformat: 'json'
+          }
+        }
+      );
+  
+      const uid = ii.data.userid;
+
+      const moodleResponse = await axios.get(
+          'https://moodle.astanait.edu.kz/webservice/rest/server.php',
+          {
+              params: {
+                  wstoken: req.session.user.moodleToken,
+                  wsfunction: 'gradereport_user_get_grade_items',
+                  moodlewsrestformat: 'json',
+                  courseid: courseId,
+                  userid: uid
+              }
+          }
+      );
+
+      console.log("Moodle API Response:", moodleResponse.data); // Debug response
+
+      const grades = moodleResponse.data?.usergrades?.[0]?.gradeitems || [];
+
+      console.log("Filtered Grades:", grades); // Debug filtered grades
+
+      res.render('grades', { grades });
+  } catch (error) {
+      console.error("Error fetching grades:", error.response?.data || error.message);
+      res.status(500).send("Error fetching grades.");
+  }
+});
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

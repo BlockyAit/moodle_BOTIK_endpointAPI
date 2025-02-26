@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grades</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <h2>Grades</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Assignment</th>
+                <th>Grade</th>
+                <th>Max Grade</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (grades.length > 0) { %>
+                <% grades.forEach(grade => { %>
+                    <tr>
+                        <td><%= grade.itemname || 'No name' %></td>
+                        <td><%= grade.gradeformatted || 'N/A' %></td>
+                        <td><%= grade.grademax || 'N/A' %></td>
+                    </tr>
+                <% }) %>
+            <% } else { %>
+                <tr>
+                    <td colspan="3">No grades available.</td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+    <a href="/active-courses">Back to Courses</a>
+</body>
+</html>
